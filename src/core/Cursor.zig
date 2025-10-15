@@ -236,6 +236,10 @@ pub const Token = struct {
     literal: []const u8,
     line: usize,
 
+    pub fn byte(@"type": Token.Type) u8 {
+        return @as(u8, @intFromEnum(@"type"));
+    }
+
     pub const Type = enum {
         // Single-character tokens.
         tkn_left_paren,

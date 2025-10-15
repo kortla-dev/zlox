@@ -12,6 +12,10 @@ pub const OpCode = enum(u8) {
     op_divide,
     op_negate,
     op_return,
+
+    pub fn byte(@"type": OpCode) u8 {
+        return @as(u8, @intFromEnum(@"type"));
+    }
 };
 
 pub const Chunk = struct {
