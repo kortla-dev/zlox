@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const core = @import("../core/core.zig");
+const core = @import("zlox/core");
 const Chunk = core.Chunk;
 const OpCode = core.OpCode;
 

@@ -1,11 +1,10 @@
 const std = @import("std");
 const mem = std.mem;
 
-const zlox = @import("common_utils");
-const debug = @import("debug/debug.zig");
-const VM = @import("core/VM.zig");
+const debug = @import("zlox/debug");
 
-const core = @import("core/core.zig");
+const core = @import("zlox/core");
+const VM = core.VM;
 const OpCode = core.OpCode;
 
 var stdout_writer = std.fs.File.stdout().writer(&.{});

@@ -5,10 +5,10 @@ const mem = std.mem;
 
 const common = @import("zlox/common");
 const compiler = @import("compiler.zig");
-const debug = @import("../debug/debug.zig");
+const debug = @import("zlox/debug");
 const value_ = @import("value.zig");
 
-const core = @import("core.zig");
+const core = @import("zlox/core");
 const Chunk = core.Chunk;
 const OpCode = core.OpCode;
 const Value = core.Value;
@@ -77,7 +77,7 @@ fn printStack(self: *VM) void {
 
 pub fn run(self: *VM) InterpretResult {
     while (true) {
-        if (common.DEBUG_FLAG) {
+        if (common.DEBUG_TRACE_EXECUTION_FLAG) {
             // std.debug.print("          ", .{});
 
             self.printStack();

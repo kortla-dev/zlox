@@ -4,15 +4,20 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const zlox_common_mod = b.addModule("zlox/common", .{
+    const zlox_common_mod = b.addModule("common", .{
         .root_source_file = b.path("src/core/common.zig"),
         .target = target,
     });
 
-    // const zlox_token_mod = b.addModule("zlox/token", .{
-    //     .root_source_file = b.path("src/core/Token.zig"),
-    //     .target = target,
-    // });
+    const zlox_core_mod = b.addModule("core", .{
+        .root_source_file = b.path("src/core/core.zig"),
+        .target = target,
+    });
+
+    const zlox_debug_mod = b.addModule("debug", .{
+        .root_source_file = b.path("src/debug/debug.zig"),
+        .target = target,
+    });
 
     const exe = b.addExecutable(.{
         .name = "zlox",
@@ -22,7 +27,8 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "zlox/common", .module = zlox_common_mod },
-                // .{ .name = "zlox/token", .module = zlox_token_mod },
+                .{ .name = "zlox/core", .module = zlox_core_mod },
+                .{ .name = "zlox/debug", .module = zlox_debug_mod },
             },
         }),
     });
