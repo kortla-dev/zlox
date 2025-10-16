@@ -2,7 +2,7 @@ const std = @import("std");
 
 const common = @import("zlox/common");
 const core = @import("core.zig");
-const debug = @import("zlox/debug");
+const debug = @import("../debug/debug.zig");
 
 const Cursor = @import("Cursor.zig");
 const Token = Cursor.Token;
@@ -10,11 +10,11 @@ const Chunk = core.Chunk;
 const OpCode = core.OpCode;
 const Value = core.Value;
 
-var stdout_writer = std.fs.File.stdout().writer(&.{});
-var stderr_writer = std.fs.File.stderr().writer(&.{});
+var stdout_writer: std.fs.File.Writer = undefined;
+var stderr_writer: std.fs.File.Writer = undefined;
 
-const stdout = &stdout_writer.interface;
-const stderr = &stderr_writer.interface;
+const stdout: *std.Io.Writer = &stdout_writer.interface;
+const stderr: *std.Io.Writer = &stderr_writer.interface;
 
 const Precedence = enum(u8) {
     none,
@@ -98,6 +98,9 @@ pub const Compiler = struct {
     panic_mode: bool = false,
 
     pub fn init() Compiler {
+        stdout_writer = std.fs.File.stdout().writer(&.{});
+        stderr_writer = std.fs.File.stderr().writer(&.{});
+
         return Compiler{};
     }
 
@@ -106,7 +109,7 @@ pub const Compiler = struct {
         self.compiling_chunk = chunk;
         self.advance();
         self.expression();
-        self.consume(Token.byte(.tkn_eof), "Expected end of expression.");
+        self.consume(.tkn_eof, "Expected end of expression.");
         self.endCompiler();
 
         return !self.had_error;
@@ -117,6 +120,8 @@ pub const Compiler = struct {
 
         while (true) {
             self.curr_tkn = self.cursor.nextToken();
+
+            std.debug.print("{f}\n", .{self.curr_tkn});
 
             if (self.curr_tkn.type != .tkn_error) break;
 
@@ -157,7 +162,7 @@ pub const Compiler = struct {
     }
 
     fn number(self: *Compiler) void {
-        const value: Value = std.fmt.parseFloat(self.prev_tkn.literal) catch |err| {
+        const value: Value = std.fmt.parseFloat(Value, self.prev_tkn.literal) catch |err| {
             @panic(@errorName(err));
         };
 
@@ -228,7 +233,7 @@ pub const Compiler = struct {
 
     fn binary(self: *Compiler) void {
         const op_type: Token.Type = self.prev_tkn.type;
-        const rule: *ParseRule = Compiler.rules.get(op_type);
+        const rule: ParseRule = Compiler.rules.get(op_type);
         self.parsePrecedence(rule.precedence);
 
         switch (op_type) {
@@ -243,17 +248,17 @@ pub const Compiler = struct {
     // ==============================
 
     fn errorAtCurrent(self: *Compiler, message: []const u8) void {
-        errorAt(&self.curr_tkn, message);
+        self.errorAt(&self.curr_tkn, message);
     }
 
     fn @"error"(self: *Compiler, message: []const u8) void {
-        errorAt(&self.curr_tkn, message);
+        self.errorAt(&self.curr_tkn, message);
     }
 
     fn errorAt(self: *Compiler, token: *Token, message: []const u8) void {
         if (self.panic_mode) return;
         self.panic_mode = true;
-        stderr.print("[line {d}] Error", token.line) catch unreachable;
+        stderr.print("[line {d}] Error", .{token.line}) catch unreachable;
 
         switch (token.type) {
             .tkn_eof => _ = stderr.write(" at end") catch unreachable,

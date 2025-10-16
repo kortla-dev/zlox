@@ -18,6 +18,7 @@ pub fn init(source: []const u8) Cursor {
 }
 
 pub fn nextToken(self: *Cursor) Token {
+    self.skipWhitespace();
     self.chr_ptr = self.peek;
 
     if (self.isAtEnd()) return self.makeToken(.tkn_eof);
@@ -95,7 +96,7 @@ fn identifierType(self: *Cursor) Token.Type {
                 'a' => self.checkkeyword(2, 3, "lse", .tkn_false),
                 'o' => self.checkkeyword(2, 1, "r", .tkn_for),
                 'u' => self.checkkeyword(2, 1, "n", .tkn_fun),
-                else => Token.Type.tkn_identifier,
+                else => .tkn_identifier,
             };
         },
         'i' => self.checkkeyword(1, 1, "f", .tkn_if),
@@ -108,7 +109,7 @@ fn identifierType(self: *Cursor) Token.Type {
             break :blk switch (self.source[self.chr_ptr + 1]) {
                 'h' => self.checkkeyword(2, 2, "is", .tkn_this),
                 'r' => self.checkkeyword(2, 2, "ue", .tkn_true),
-                else => Token.Type.tkn_identifierk,
+                else => .tkn_identifier,
             };
         },
         'v' => self.checkkeyword(1, 2, "ar", .tkn_var),
@@ -118,30 +119,30 @@ fn identifierType(self: *Cursor) Token.Type {
 }
 
 fn makeIdentifierToken(self: *Cursor) Token {
-    while (isAlphaNumeric(self.peekCurrent())) self.advance();
+    while (isAlphaNumeric(self.peekCurrent())) _ = self.advance();
 
-    return self.makeToken(identifierType());
+    return self.makeToken(self.identifierType());
 }
 
 fn makeStringToken(self: *Cursor) Token {
     while ((self.peekCurrent() != '"') and !self.isAtEnd()) {
         if (self.peekCurrent() != '\n') self.line += 1;
-        self.advance();
+        _ = self.advance();
     }
 
-    if (self.isAtEnd()) self.makeErrorToken("Unterminated string.");
-    self.advance();
+    if (self.isAtEnd()) return self.makeErrorToken("Unterminated string.");
+    _ = self.advance();
 
     return self.makeToken(.tkn_string);
 }
 
 fn makeNumberToken(self: *Cursor) Token {
-    while (isDigit(self.peekCurrent())) self.advance();
+    while (isDigit(self.peekCurrent())) _ = self.advance();
 
     if (self.peekCurrent() == '.' and isDigit(self.peekNext())) {
-        self.advance();
+        _ = self.advance();
 
-        while (isDigit(self.peekCurrent())) self.advance();
+        while (isDigit(self.peekCurrent())) _ = self.advance();
     }
 
     return self.makeToken(.tkn_number);
@@ -163,7 +164,7 @@ fn match(self: *Cursor, expected: u8) bool {
 }
 
 fn isAtEnd(self: *Cursor) bool {
-    return self.peek == 0;
+    return self.source[self.peek] == 0;
 }
 
 /// Returns the current character under self.peek and advances by 1
@@ -193,14 +194,14 @@ fn skipWhitespace(self: *Cursor) void {
             ' ',
             '\r',
             '\t',
-            => self.advance(),
+            => _ = self.advance(),
             '\n' => {
                 self.line += 1;
-                self.advance();
+                _ = self.advance();
             },
             '/' => {
                 if (self.peekNext() == '/') {
-                    while ((self.peekCurrent() != '\n') and (!self.isAtEnd())) self.advance();
+                    while ((self.peekCurrent() != '\n') and (!self.isAtEnd())) _ = self.advance();
                 } else {
                     return;
                 }
@@ -290,4 +291,23 @@ pub const Token = struct {
         tkn_error,
         tkn_eof,
     };
+
+    // pub fn format(
+    //     self: @This(),
+    //     writer: anytype,
+    // ) !void {
+    //     const maybe_tag = std.meta.intToEnum(@TypeOf(self.type), @intFromEnum(self.type));
+    //     if (maybe_tag) |valid_tag| {
+    //         try writer.print("Token({s}, \"{s}\")", .{ @tagName(valid_tag), self.literal });
+    //     } else {
+    //         try writer.print("Token(INVALID({}), \"{s}\")", .{ @intFromEnum(self.type), self.literal });
+    //     }
+    // }
+
+    pub fn format(
+        self: @This(),
+        writer: *std.Io.Writer,
+    ) std.Io.Writer.Error!void {
+        try writer.print("Token({s}, \"{s}\")", .{ @tagName(self.type), self.literal });
+    }
 };

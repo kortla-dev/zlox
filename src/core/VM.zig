@@ -4,12 +4,13 @@ const std = @import("std");
 const mem = std.mem;
 
 const common = @import("zlox/common");
-const compiler = @import("compiler.zig");
-const debug = @import("zlox/debug");
+const compiler_ = @import("compiler.zig");
+const debug = @import("../debug/debug.zig");
 const value_ = @import("value.zig");
 
-const core = @import("zlox/core");
+const core = @import("core.zig");
 const Chunk = core.Chunk;
+const Compiler = compiler_.Compiler;
 const OpCode = core.OpCode;
 const Value = core.Value;
 
@@ -151,8 +152,27 @@ fn opByte(op_code: OpCode) u8 {
 
 pub fn interpret(gpa: mem.Allocator, source: []const u8) InterpretResult {
     var chunk = Chunk.init(&gpa);
+    defer chunk.deinit();
 
-    if (!compiler.compile(source)) {}
+    var compiler = Compiler.init();
+
+    const compile_success = compiler.compile(source, &chunk) catch |err| {
+        @panic(@errorName(err));
+    };
+
+    if (!compile_success) {
+        return .compile_error;
+    } // idk
+
+    var vm = VM.init(gpa, &chunk);
+    defer vm.deinit();
+
+    return vm.run();
+
+    // var vm = VM.init(gpa, &chunk);
+    // defer vm.deinit();
+    //
+    // return vm.run();
 
     // var chunk = core.Chunk.init(&gpa);
     // defer chunk.deinit();

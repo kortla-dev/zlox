@@ -1,9 +1,9 @@
 const std = @import("std");
 const mem = std.mem;
 
-const debug = @import("zlox/debug");
+const debug = @import("debug/debug.zig");
 
-const core = @import("zlox/core");
+const core = @import("core/core.zig");
 const VM = core.VM;
 const OpCode = core.OpCode;
 
@@ -63,7 +63,8 @@ fn runFile(gpa: mem.Allocator, path: []const u8) !void {
 
     try stdout.writeAll(source);
 
-    const result: VM.InterpretResult = interpret(source);
+    const result: VM.InterpretResult = VM.interpret(gpa, source);
+    //interpret(source);
 
     switch (result) {
         .compile_error => std.process.exit(65),
@@ -82,19 +83,19 @@ pub fn main() !void {
     // const vm = VM.init(&ally);
     // _ = vm;
 
-    // const argv = std.os.argv;
-    // if (argv.len == 1) {
-    //     try repl();
-    // } else if (argv.len == 2) {
-    //     runFile(ally, mem.span(argv[1])) catch |err| {
-    //         @panic(@errorName(err));
-    //     };
-    // } else {
-    //     try stderr.writeAll("Usage: zlox [path]\n");
-    //     std.process.exit(64);
-    // }
+    const argv = std.os.argv;
+    if (argv.len == 1) {
+        try repl();
+    } else if (argv.len == 2) {
+        runFile(ally, mem.span(argv[1])) catch |err| {
+            @panic(@errorName(err));
+        };
+    } else {
+        try stderr.writeAll("Usage: zlox [path]\n");
+        std.process.exit(64);
+    }
 
-    _ = VM.interpret(ally, "dksjfsldkjf");
+    // _ = VM.interpret(ally, "1+1\x00");
 
     // debug.disassembleChunk(&chunk, "test chunk");
     // chunk.code.insert()
